@@ -7,19 +7,25 @@ Consider a curve that satisfies the following equation:
 
 
 $$
-y = \exp( ax^2 + bx + c ) + w,
+y = \exp( ax^2 + bx + c ) + w
 $$
- suppose we have N observation data points about x and y and want to find the parameters of the curve based on these data points.
+
+Suppose we have N observation data points about x and y and want to find the parameters of the curve based on these data points.
 
 Then, we solve the following least-square problem to estimate the curve parameters:
+
 $$
     \min \limits_{a,b,c} \frac{1}{2}\sum\limits_{i = 1}^N {{{\left\| {{y_i} - \exp \left( {ax_i^2 + bx_i + c} \right)} \right\|}^2}} .
 $$
+
 Define the error as:
+
 $$
 e_i = y_i - \exp \left( {ax_i^2 + bx_i + c} \right),
 $$
+
 Then we can find the derivative of each error term with respect to the state variable:
+
 $$
     \begin{aligned}
         \frac{{\partial {e_i}}}{{\partial a}} &=  - x_i^2\exp \left( {ax_i^2 + b{x_i} + c} \right)\\
@@ -27,10 +33,16 @@ $$
         \frac{{\partial {e_i}}}{{\partial c}} &=  - \exp \left( {ax_i^2 + b{x_i} + c} \right)
     \end{aligned}
 $$
-So $\mathbf{J}_i = \left[\frac{{\partial {e_i}}}{{\partial a}},\frac{{\partial {e_i}}}{{\partial b}},\frac{{\partial {e_i}}}{{\partial c}} \right]^T$, and the normal equation of the Gauss-Newton method is:
+
+So 
+$` \mathbf{J}_i = \left[\frac{{\partial {e_i}}}{{\partial a}},\frac{{\partial {e_i}}}{{\partial b}},\frac{{\partial {e_i}}}{{\partial c}} \right]^T `$, 
+
+and the normal equation of the Gauss-Newton method is:
+
 $$
-    \left(\sum\limits_{i = 1}^{100} {\mathbf{J}_i{(\sigma^2)^{ - 1}}{\mathbf{J}_i}}^T \right) \Delta \mathbf{x}_k = \sum\limits_{i = 1}^{100} { - {\mathbf{J}_i}{(\sigma^2)^{ - 1}}{e_i}},
+    \left(\sum\limits_{i = 1}^{100} {\mathbf{J}_i{(\sigma^2)^{ - 1}}{\mathbf{J}_i}}^T \right)  \Delta \mathbf{x}_k = \sum\limits_{i=1}^{100} { - {\mathbf{J}_i}{(\sigma^2)^{ - 1}}{e_i}}
 $$
+
 Result:
 
 ```

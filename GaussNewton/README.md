@@ -40,7 +40,11 @@ $` \mathbf{J}_i = \left[\frac{{\partial {e_i}}}{{\partial a}},\frac{{\partial {e
 and the normal equation of the Gauss-Newton method is:
 
 $$
-    \left(\sum\limits_{i = 1}^{100} {\mathbf{J}_i{(\sigma^2)^{ - 1}}{\mathbf{J}_i}}^T \right)  \Delta \mathbf{x}_k = \sum\limits_{i=1}^{100} { - {\mathbf{J}_i}{(\sigma^2)^{ - 1}}{e_i}}
+    \left(\sum\limits_{i = 1}^{100} {\mathbf{J}_i{(\sigma^2)^{ - 1}}{\mathbf{J}_i}}^T \right)  \Delta \mathbf{x}_k 
+$$
+
+$$
+= \sum\limits_{i=1}^{100} { - {\mathbf{J}_i}{(\sigma^2)^{ - 1}}{e_i}}
 $$
 
 Result:

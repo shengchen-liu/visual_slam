@@ -102,12 +102,23 @@ int main(int argc, char **argv) {
 // compute the angle
 void computeAngle(const cv::Mat &image, vector<cv::KeyPoint> &keypoints) {
     int half_patch_size = 8;
-    for (auto &kp : keypoints) {
-	// START YOUR CODE HERE (~7 lines)
-        kp.angle = 0; // compute kp.angle 
-        // END YOUR CODE HERE
+    // boudary range is from (u - 8, v - 8) to (u + 7, v + 7)
+    if (kp.pt.x < half_patch_size || kp.pt.y < half_patch_size ||
+        kp.pt.x >= img.cols - half_patch_size || kp.pt.y >= img.rows - half_patch_size) {
+      // outside
+      continue;
     }
-    return;
+    for (auto &kp : keypoints) {
+        float m01 = 0, m10 = 0;  // moment in x, y direction
+        for (int dx = - half_patch_size ; dx < half_patch_size; ++dx) {
+            for (int dy = - half_patch_size; dy < half_patch_size; ++dy) {
+                auto pixel = image.at<uchar>(kp.pt.y + dy, kp.pt.x + dx);
+                m10 += dx * pixel;
+                m01 += dy * pixel;
+            }
+        }
+        kp.angle = atan2(m01, m10) / pi * 180;
+    }
 }
 
 // -------------------------------------------------------------------------------------------------- //

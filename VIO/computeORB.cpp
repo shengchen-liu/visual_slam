@@ -5,13 +5,11 @@
 using namespace std;
 
 // global variables
-string first_file = "./1.png";
-string second_file = "./2.png";
+string first_file = "../1.png";
+string second_file = "../2.png";
 
 const double pi = 3.1415926;    // pi
 
-
-// TODO implement this function
 /**
  * compute the angle for ORB descriptor
  * @param [in] image input image
@@ -19,7 +17,6 @@ const double pi = 3.1415926;    // pi
  */
 void computeAngle(const cv::Mat &image, vector<cv::KeyPoint> &keypoints);
 
-// TODO implement this function
 /**
  * compute ORB descriptor
  * @param [in] image the input image
@@ -29,7 +26,6 @@ void computeAngle(const cv::Mat &image, vector<cv::KeyPoint> &keypoints);
 typedef vector<bool> DescType;  // type of descriptor, 256 bools
 void computeORBDesc(const cv::Mat &image, vector<cv::KeyPoint> &keypoints, vector<DescType> &desc);
 
-// TODO implement this function
 /**
  * brute-force match two sets of descriptors
  * @param desc1 the first descriptor
@@ -102,13 +98,13 @@ int main(int argc, char **argv) {
 // compute the angle
 void computeAngle(const cv::Mat &image, vector<cv::KeyPoint> &keypoints) {
     int half_patch_size = 8;
-    // boudary range is from (u - 8, v - 8) to (u + 7, v + 7)
-    if (kp.pt.x < half_patch_size || kp.pt.y < half_patch_size ||
-        kp.pt.x >= img.cols - half_patch_size || kp.pt.y >= img.rows - half_patch_size) {
-      // outside
-      continue;
-    }
     for (auto &kp : keypoints) {
+        // boudary range is from (u - 8, v - 8) to (u + 7, v + 7)
+        if (kp.pt.x < half_patch_size || kp.pt.y < half_patch_size ||
+            kp.pt.x >= image.cols - half_patch_size || kp.pt.y >= image.rows - half_patch_size) {
+            // outside
+            continue;
+            }
         float m01 = 0, m10 = 0;  // moment in x, y direction
         for (int dx = - half_patch_size ; dx < half_patch_size; ++dx) {
             for (int dy = - half_patch_size; dy < half_patch_size; ++dy) {
@@ -384,13 +380,34 @@ int ORB_pattern[256 * 4] = {
 
 // compute the descriptor
 void computeORBDesc(const cv::Mat &image, vector<cv::KeyPoint> &keypoints, vector<DescType> &desc) {
+    int half_patch_size = 8;
     for (auto &kp: keypoints) {
         DescType d(256, false);
-        for (int i = 0; i < 256; i++) {
-            // START YOUR CODE HERE (~7 lines)
-            d[i] = 0;  // if kp goes outside, set d.clear()
-	    // END YOUR CODE HERE
+        // if kp goes outside, set d.clear()
+        if (kp.pt.x < half_patch_size || kp.pt.y < half_patch_size ||
+            kp.pt.x >= image.cols - half_patch_size || kp.pt.y >= image.rows - half_patch_size){
+            d.clear();
+        } 
+        else {
+            for (int i = 0; i < 256; i++) {
+                cv::Point2f  p(ORB_pattern[i], ORB_pattern[i + 1]);
+                cv::Point2f  q(ORB_pattern[i + 2], ORB_pattern[i + 3]);
+
+                // get rotation theta
+                double theta = kp.angle;
+                double sin_theta = sin(theta / 180 * pi);
+                double cos_theta = cos(theta / 180 * pi);
+                cv::Point2f p_point = cv::Point2f(cos_theta * p.x - sin_theta * p.y, sin_theta * p.x + cos_theta * p.y) + kp.pt;
+                cv::Point2f q_point = cv::Point2f(cos_theta * q.x - sin_theta * q.y, sin_theta * q.x + cos_theta * q.y) + kp.pt;
+
+                // get descriptor
+                if (image.at<uchar>(p_point.y, p_point.x) < image.at<uchar>(q_point.y, q_point.x)) 
+                    d[i] = 0;  
+                else 
+                    d[i] = 1;
+            }
         }
+        
         desc.push_back(d);
     }
 
@@ -406,9 +423,26 @@ void computeORBDesc(const cv::Mat &image, vector<cv::KeyPoint> &keypoints, vecto
 void bfMatch(const vector<DescType> &desc1, const vector<DescType> &desc2, vector<cv::DMatch> &matches) {
     int d_max = 50;
 
-    // START YOUR CODE HERE (~12 lines)
-    // find matches between desc1 and desc2. 
-    // END YOUR CODE HERE
+    for (size_t i1 = 0; i1 < desc1.size(); ++i1) {
+        if (desc1[i1].empty())
+            continue;
+        cv::DMatch m{i1, 0, 256};
+        for (size_t i2 = 0; i2 < desc2.size(); ++i2) {
+            if (desc2[i2].empty())
+                continue;
+            int distance = 0;
+            for (int k = 0; k < 256; k++) {
+                distance += desc1[i1][k] ^ desc2[i2][k];
+            }
+            if (distance < d_max && distance < m.distance){
+                m.distance = distance;
+                m.trainIdx = i2;
+            }
+        }
+        if (m.distance < d_max) {
+            matches.push_back(m);
+        }
+    }
 
     for (auto &m: matches) {
         cout << m.queryIdx << ", " << m.trainIdx << ", " << m.distance << endl;

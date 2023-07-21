@@ -1,7 +1,3 @@
-//
-// Created by xiang on 12/21/17.
-//
-
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
@@ -12,7 +8,7 @@ using namespace Eigen;
 #include <iostream>
 #include <iomanip>
 
-#include "sophus/se3.h"
+#include "sophus/se3.hpp"
 
 using namespace std;
 
@@ -42,7 +38,7 @@ int main(int argc, char **argv) {
     int nPoints = p3d.size();
     cout << "points: " << nPoints << endl;
 
-    Sophus::SE3 T_esti; // estimated pose
+    Sophus::SE3d T_esti; // estimated pose
 
     for (int iter = 0; iter < iterations; iter++) {
 

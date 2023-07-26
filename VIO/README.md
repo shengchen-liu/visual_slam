@@ -1,6 +1,6 @@
 # VIO (Visual Odometry)
 
-## Coding ORB features from scratch.
+## Part 1: Coding ORB features from scratch.
 
 ORB features are also composed of two parts: *ORB key points* and *ORB descriptor*. Its key point is called **oriented FAST**, which is an improved version of the FAST. Its descriptor is called **BRIEF (Binary Robust Independent Elementary Feature)**. 
 
@@ -46,7 +46,7 @@ Match result:
 
 ![](./matches.png)
 
-## Write a Gauss-Newton method for Bundle Adjustment to solve for PnP camera pose estimation
+## Part 2: Write a Gauss-Newton method for Bundle Adjustment to solve for PnP camera pose estimation
 In this part, we only consider estimation of the camera's position and ignore observations' update.
 Suppose given a set of 3D points $\textbf{P} = \{ \textbf{p}_i \}$.  Their coordinates in the camera image plane is 2d points  $\textbf{U} = \{ \textbf{u}_i \}$.  Suppose the intrinsic matrix is given:
 
@@ -99,7 +99,7 @@ estimated pose:
                 0                 0                 0                 1
 ```
 
-## BA using g2o
+## Part3: BA using g2o to solve for pose estimation 3d2d
 ### Result
 ```
 -- Max dist : 94.000000 

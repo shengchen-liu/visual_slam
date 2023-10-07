@@ -11,9 +11,7 @@ public:
                                                                            observed_y(observation_y) {}
 
     template<typename T>
-    bool operator()(const T *const camera,
-                    const T *const point,
-                    T *residuals) const {
+    bool operator()(const T *const camera, const T *const point, T *residuals) const {
         // camera[0,1,2] are the angle-axis rotation
         T predictions[2];
         CamProjectionWithDistortion(camera, point, predictions);
@@ -25,7 +23,7 @@ public:
 
     // camera : 9 dims array
     // [0-2] : angle-axis rotation
-    // [3-5] : translateion
+    // [3-5] : translation
     // [6-8] : camera parameter, [6] focal length, [7-8] second and forth order radial distortion
     // point : 3D location.
     // predictions : 2D predictions with center of the image plane.

@@ -16,9 +16,9 @@ int main(int argc, char **argv) {
     BALProblem bal_problem(argv[1]);
     bal_problem.Normalize();
     bal_problem.Perturb(0.1, 0.5, 0.5);
-    bal_problem.WriteToPLYFile("initial.ply");
+    bal_problem.WriteToPLYFile(std::string(argv[1]) + "_" + "initial.ply");
     SolveBA(bal_problem);
-    bal_problem.WriteToPLYFile("final.ply");
+    bal_problem.WriteToPLYFile(std::string(argv[1]) + "_" + "final.ply");
 
     return 0;
 }

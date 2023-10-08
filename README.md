@@ -11,3 +11,13 @@ $$
 [VIO (Visual Odometry)](VIO/README.md)
 
 ![](./VIO/matches.png)
+
+[Bundle Adjustment](BundleAdjustment/README.md)
+
+Before Optimization:
+
+![](BundleAdjustment/before.png)
+
+After Optimization:
+
+![](BundleAdjustment/after.png)

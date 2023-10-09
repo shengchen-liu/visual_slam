@@ -14,10 +14,8 @@ $$
 
 [Bundle Adjustment](BundleAdjustment/README.md)
 
-Before Optimization:
+| Before optimization              | After optimization                |
+|----------------------------------| --------------------------------- |
+| ![](BundleAdjustment/before.png) | ![](BundleAdjustment/after.png) |
 
-![](BundleAdjustment/before.png)
-
-After Optimization:
-
-![](BundleAdjustment/after.png)
+## 

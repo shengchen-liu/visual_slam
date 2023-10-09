@@ -13,7 +13,7 @@ using namespace Sophus;
 using namespace Eigen;
 using namespace std;
 
-/// 姿态和内参的结构
+/// pose and intrinsics
 struct PoseAndIntrinsics {
     PoseAndIntrinsics() {}
 
@@ -42,17 +42,19 @@ struct PoseAndIntrinsics {
     double k1 = 0, k2 = 0;
 };
 
-/// 位姿加相机内参的顶点，9维，前三维为so3，接下去为t, f, k1, k2
+// camera's pose and intrinsics, first 3 values is so3, the rest is t, f, k1, k2
 class VertexPoseAndIntrinsics : public g2o::BaseVertex<9, PoseAndIntrinsics> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     VertexPoseAndIntrinsics() {}
 
+    // reset
     virtual void setToOriginImpl() override {
         _estimate = PoseAndIntrinsics();
     }
 
+    // update
     virtual void oplusImpl(const double *update) override {
         _estimate.rotation = SO3d::exp(Vector3d(update[0], update[1], update[2])) * _estimate.rotation;
         _estimate.translation += Vector3d(update[3], update[4], update[5]);
@@ -61,7 +63,7 @@ public:
         _estimate.k2 += update[8];
     }
 
-    /// 根据估计值投影一个点
+    // project point based on estimation
     Vector2d project(const Vector3d &point) {
         Vector3d pc = _estimate.rotation * point + _estimate.translation;
         pc = -pc / pc[2];
@@ -76,30 +78,36 @@ public:
     virtual bool write(ostream &out) const {}
 };
 
+// vertex point type : dimension, data type
 class VertexPoint : public g2o::BaseVertex<3, Vector3d> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     VertexPoint() {}
 
+    // reset
     virtual void setToOriginImpl() override {
         _estimate = Vector3d(0, 0, 0);
     }
 
+    // update
     virtual void oplusImpl(const double *update) override {
         _estimate += Vector3d(update[0], update[1], update[2]);
     }
 
+    // read / write
     virtual bool read(istream &in) {}
 
     virtual bool write(ostream &out) const {}
 };
 
+// edge type : observation's dimension, type, vertexPoint
 class EdgeProjection :
     public g2o::BaseBinaryEdge<2, Vector2d, VertexPoseAndIntrinsics, VertexPoint> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
+    // compute error
     virtual void computeError() override {
         auto v0 = (VertexPoseAndIntrinsics *) _vertices[0];
         auto v1 = (VertexPoint *) _vertices[1];
@@ -114,7 +122,76 @@ public:
 
 };
 
-void SolveBA(BALProblem &bal_problem);
+void SolveBA(BALProblem &bal_problem) {
+  const int point_block_size = bal_problem.point_block_size();
+  const int camera_block_size = bal_problem.camera_block_size();
+  double *points = bal_problem.mutable_points();
+  double *cameras = bal_problem.mutable_cameras();
+
+  // pose dimension 9, landmark is 3
+  typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType;
+  typedef g2o::LinearSolverCSparse<BlockSolverType::PoseMatrixType> LinearSolverType;
+  // use LM
+  auto solver = new g2o::OptimizationAlgorithmLevenberg(
+          g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
+  g2o::SparseOptimizer optimizer;
+  optimizer.setAlgorithm(solver);
+  optimizer.setVerbose(true);
+
+  /// build g2o problem
+  const double *observations = bal_problem.observations();
+  // vertex
+  vector<VertexPoseAndIntrinsics *> vertex_pose_intrinsics;
+  vector<VertexPoint *> vertex_points;
+  // camera points
+  for (int i = 0; i < bal_problem.num_cameras(); ++i) {
+    VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics();
+    double *camera = cameras + camera_block_size * i;
+    v->setId(i);
+    v->setEstimate(PoseAndIntrinsics(camera));
+    optimizer.addVertex(v);
+    vertex_pose_intrinsics.push_back(v);
+  }
+  // landmark points
+  for (int i = 0; i < bal_problem.num_points(); ++i) {
+    VertexPoint *v = new VertexPoint();
+    double *point = points + point_block_size * i;
+    v->setId(i + bal_problem.num_cameras());
+    v->setEstimate(Vector3d(point[0], point[1], point[2]));
+    // manually set Marginalized vertex
+    v->setMarginalized(true);
+    optimizer.addVertex(v);
+    vertex_points.push_back(v);
+  }
+
+  // edge
+  for (int i = 0; i < bal_problem.num_observations(); ++i) {
+    EdgeProjection *edge = new EdgeProjection;
+    edge->setVertex(0, vertex_pose_intrinsics[bal_problem.camera_index()[i]]);
+    edge->setVertex(1, vertex_points[bal_problem.point_index()[i]]);
+    edge->setMeasurement(Vector2d(observations[2 * i + 0], observations[2 * i + 1]));
+    edge->setInformation(Matrix2d::Identity());
+    edge->setRobustKernel(new g2o::RobustKernelHuber());
+    optimizer.addEdge(edge);
+  }
+
+  optimizer.initializeOptimization();
+  optimizer.optimize(40);
+
+  // set to bal problem
+  for (int i = 0; i < bal_problem.num_cameras(); ++i) {
+    double *camera = cameras + camera_block_size * i;
+    auto vertex = vertex_pose_intrinsics[i];
+    auto estimate = vertex->estimate();
+    estimate.set_to(camera);
+  }
+  for (int i = 0; i < bal_problem.num_points(); ++i) {
+    double *point = points + point_block_size * i;
+    auto vertex = vertex_points[i];
+    for (int k = 0; k < 3; ++k) point[k] = vertex->estimate()[k];
+  }
+}
+
 
 int main(int argc, char **argv) {
 
@@ -133,70 +210,3 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void SolveBA(BALProblem &bal_problem) {
-    const int point_block_size = bal_problem.point_block_size();
-    const int camera_block_size = bal_problem.camera_block_size();
-    double *points = bal_problem.mutable_points();
-    double *cameras = bal_problem.mutable_cameras();
-
-    // pose dimension 9, landmark is 3
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType;
-    typedef g2o::LinearSolverCSparse<BlockSolverType::PoseMatrixType> LinearSolverType;
-    // use LM
-    auto solver = new g2o::OptimizationAlgorithmLevenberg(
-        g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
-    g2o::SparseOptimizer optimizer;
-    optimizer.setAlgorithm(solver);
-    optimizer.setVerbose(true);
-
-    /// build g2o problem
-    const double *observations = bal_problem.observations();
-    // vertex
-    vector<VertexPoseAndIntrinsics *> vertex_pose_intrinsics;
-    vector<VertexPoint *> vertex_points;
-    for (int i = 0; i < bal_problem.num_cameras(); ++i) {
-        VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics();
-        double *camera = cameras + camera_block_size * i;
-        v->setId(i);
-        v->setEstimate(PoseAndIntrinsics(camera));
-        optimizer.addVertex(v);
-        vertex_pose_intrinsics.push_back(v);
-    }
-    for (int i = 0; i < bal_problem.num_points(); ++i) {
-        VertexPoint *v = new VertexPoint();
-        double *point = points + point_block_size * i;
-        v->setId(i + bal_problem.num_cameras());
-        v->setEstimate(Vector3d(point[0], point[1], point[2]));
-        // g2o在BA中需要手动设置待Marg的顶点
-        v->setMarginalized(true);
-        optimizer.addVertex(v);
-        vertex_points.push_back(v);
-    }
-
-    // edge
-    for (int i = 0; i < bal_problem.num_observations(); ++i) {
-        EdgeProjection *edge = new EdgeProjection;
-        edge->setVertex(0, vertex_pose_intrinsics[bal_problem.camera_index()[i]]);
-        edge->setVertex(1, vertex_points[bal_problem.point_index()[i]]);
-        edge->setMeasurement(Vector2d(observations[2 * i + 0], observations[2 * i + 1]));
-        edge->setInformation(Matrix2d::Identity());
-        edge->setRobustKernel(new g2o::RobustKernelHuber());
-        optimizer.addEdge(edge);
-    }
-
-    optimizer.initializeOptimization();
-    optimizer.optimize(40);
-
-    // set to bal problem
-    for (int i = 0; i < bal_problem.num_cameras(); ++i) {
-        double *camera = cameras + camera_block_size * i;
-        auto vertex = vertex_pose_intrinsics[i];
-        auto estimate = vertex->estimate();
-        estimate.set_to(camera);
-    }
-    for (int i = 0; i < bal_problem.num_points(); ++i) {
-        double *point = points + point_block_size * i;
-        auto vertex = vertex_points[i];
-        for (int k = 0; k < 3; ++k) point[k] = vertex->estimate()[k];
-    }
-}

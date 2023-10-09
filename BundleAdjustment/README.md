@@ -1,8 +1,8 @@
 # Bundle Adjustment
 
-| Before optimization | After optimization                         |
-| ------------------- | ------------------------------------------ |
-| ![](before.png)     | ![](/run/user/1000/doc/126d508c/after.png) |
+| Before optimization | After optimization |
+| ------------------- | ------------------ |
+| ![](before.png)     | ![](after.png)     |
 
 ## BAL dataset
 

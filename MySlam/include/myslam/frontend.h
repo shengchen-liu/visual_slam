@@ -16,7 +16,7 @@ class Viewer;
 enum class FrontendStatus { INITING, TRACKING_GOOD, TRACKING_BAD, LOST };
 
 /**
- * 前端
+ * Front end
  * 估计当前帧Pose，在满足关键帧条件时向地图加入关键帧并触发优化
  */
 class Frontend {

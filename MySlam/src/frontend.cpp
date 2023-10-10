@@ -267,8 +267,8 @@ int Frontend::TrackLastFrame() {
 
 bool Frontend::StereoInit() {
     int num_features_left = DetectFeatures();
-    int num_coor_features = FindFeaturesInRight();
-    if (num_coor_features < num_features_init_) {
+    int num_features_right = FindFeaturesInRight();
+    if (num_features_right < num_features_init_) {
         return false;
     }
 

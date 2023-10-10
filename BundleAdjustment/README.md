@@ -91,7 +91,7 @@ for each observation:
      ceres::LossFunction *loss_function = new ceres::HuberLoss(1.0);
 
      // Each observation corresponds to a pair of a camera and a point
-     // which are identif            ied by camera_index()[i] and point_index()[i]
+     // which are identified by camera_index()[i] and point_index()[i]
      // respectively.
      double *camera = cameras + camera_block_size * bal_problem.camera_index()[i];
      double *point = points + point_block_size * bal_problem.point_index()[i];

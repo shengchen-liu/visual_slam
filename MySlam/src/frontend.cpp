@@ -21,17 +21,25 @@ Frontend::Frontend() {
 bool Frontend::AddFrame(myslam::Frame::Ptr frame) {
     current_frame_ = frame;
 
+    if (status_ == FrontendStatus::TRACKING_GOOD){
+      LOG(INFO) << "FrontendStatus: " << "TRACKING_GOOD";
+    } else if (status_ == FrontendStatus::TRACKING_BAD) {
+      LOG(INFO) << "FrontendStatus: " << "TRACKING_BAD";
+    }
+
     switch (status_) {
-        case FrontendStatus::INITING:
-            StereoInit();
-            break;
+        case FrontendStatus::INITIATION:
+          LOG(INFO) << "FrontendStatus: " << "INITIATION";
+          StereoInit();
+          break;
         case FrontendStatus::TRACKING_GOOD:
         case FrontendStatus::TRACKING_BAD:
-            Track();
-            break;
+          Track();
+          break;
         case FrontendStatus::LOST:
-            Reset();
-            break;
+          LOG(INFO) << "FrontendStatus: " << "LOST";
+          Reset();
+          break;
     }
 
     last_frame_ = current_frame_;
@@ -113,7 +121,7 @@ int Frontend::TriangulateNewPoints() {
                 camera_right_->pixel2camera(
                     Vec2(current_frame_->features_right_[i]->position_.pt.x,
                          current_frame_->features_right_[i]->position_.pt.y))};
-            Vec3 pworld = Vec3::Zero();
+            Vec3 pworld = Vec3::Zero();  // 3d
 
             if (triangulation(poses, points, pworld) && pworld[2] > 0) {
                 auto new_map_point = MapPoint::CreateNewMappoint();

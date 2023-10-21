@@ -13,7 +13,7 @@ namespace myslam {
 class Backend;
 class Viewer;
 
-enum class FrontendStatus { INITING, TRACKING_GOOD, TRACKING_BAD, LOST };
+enum class FrontendStatus { INITIATION, TRACKING_GOOD, TRACKING_BAD, LOST };
 
 /**
  * Front end
@@ -111,7 +111,7 @@ class Frontend {
     void SetObservationsForKeyFrame();
 
     // data
-    FrontendStatus status_ = FrontendStatus::INITING;
+    FrontendStatus status_ = FrontendStatus::INITIATION;
 
     Frame::Ptr current_frame_ = nullptr;  // 当前帧
     Frame::Ptr last_frame_ = nullptr;     // 上一帧

@@ -45,6 +45,6 @@ cd build
 cmake ..  
 make   
 
-运行：
+Run：
 
 ./camera_calib

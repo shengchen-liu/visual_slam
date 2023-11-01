@@ -6,6 +6,11 @@ This is a collection of my visual slam projects
 
 <img src="./CameraCalibration/demo.jpg" style="zoom:50%;" />
 
+[Triangulation](Triangulation/README.md)
+<img src="./Triangulation/result.gif" />
+
+
+
 [Gauss-Newton Curve Fitting](GaussNewton/README.md)
 
 
